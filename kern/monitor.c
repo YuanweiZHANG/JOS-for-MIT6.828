@@ -129,10 +129,10 @@ monitor(struct Trapframe *tf)
 	char *buf;
 
 	cprintf("Welcome to the JOS kernel monitor!\n");
-	cprintf("%C__       __   %C________   %C________   %C________\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
-	cprintf("%C\\ \\     / /  %C| ______|  %C|  ____ |  %C| ______ |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("%C__       __   %C_______    %C_______    %C________\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("%C\\ \\     / /  %C|  _____|  %C|  ___  |  %C|  ____  |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf(" %C\\ \\   / /   %C| |_____   %C| |___| |  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
-	cprintf("  %C\\ \\_/ /    %C| ______|  %C|  _  __|  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("  %C\\ \\_/ /    %C|  _____|  %C|  _  __|  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf("   %C\\   /     %C| |_____   %C| | \\ \\    %C| |____| |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf("    %C\\_/      %C|_______|  %C|_|  \\_\\   %C|________|\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf("%C", LIGHT_GRAY);
