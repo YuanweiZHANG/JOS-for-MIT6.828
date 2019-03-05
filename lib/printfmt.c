@@ -7,6 +7,7 @@
 #include <inc/string.h>
 #include <inc/stdarg.h>
 #include <inc/error.h>
+#include <inc/tcolor.h>
 
 /*
  * Space or zero padding and a field width are supported for the numeric
@@ -103,6 +104,10 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		altflag = 0;
 	reswitch:
 		switch (ch = *(unsigned char *) fmt++) {
+		// Set color
+		case 'C':
+			textcolor = va_arg(ap, int);
+			break;
 
 		// flag to pad on the right
 		case '-':
@@ -206,10 +211,9 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		// (unsigned) octal
 		case 'o':
 			// Replace this with your code.
-			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
+			num = getuint(&ap, lflag);
+			base = 8;
+			goto number;
 
 		// pointer
 		case 'p':

@@ -4,11 +4,14 @@
 #include <inc/types.h>
 #include <inc/stdio.h>
 #include <inc/stdarg.h>
+#include <inc/tcolor.h>
 
+unsigned int textcolor = 0x0700;
 
 static void
 putch(int ch, int *cnt)
 {
+	ch |= textcolor;
 	cputchar(ch);
 	*cnt++;
 }

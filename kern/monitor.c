@@ -6,6 +6,7 @@
 #include <inc/memlayout.h>
 #include <inc/assert.h>
 #include <inc/x86.h>
+#include <inc/tcolor.h>
 
 #include <kern/console.h>
 #include <kern/monitor.h>
@@ -24,6 +25,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "backtrace", "Display backtrace information of stack", mon_backtrace },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -58,6 +60,20 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+	cprintf("Stack backtrace:\n");
+	uint32_t *ebp = (uint32_t *)read_ebp();
+	while (ebp) {
+		cprintf("  ebp %08x  eip %08x  args", ebp, ebp[1]);
+		for (int i = 2; i < 7; ++i) {
+			cprintf(" %08x", ebp[i]);
+		}
+		cprintf("\n");
+		struct Eipdebuginfo info;
+		int success = debuginfo_eip(ebp[1], &info);
+		cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line, info.eip_fn_namelen, info.eip_fn_name, ebp[1] - info.eip_fn_addr);
+		ebp = (uint32_t *) (*ebp);
+	}
+
 	return 0;
 }
 
@@ -113,6 +129,13 @@ monitor(struct Trapframe *tf)
 	char *buf;
 
 	cprintf("Welcome to the JOS kernel monitor!\n");
+	cprintf("%C__       __   %C_______    %C_______    %C________\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("%C\\ \\     / /  %C|  _____|  %C|  ___  |  %C|  ____  |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf(" %C\\ \\   / /   %C| |_____   %C| |___| |  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("  %C\\ \\_/ /    %C|  _____|  %C|  _  __|  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("   %C\\   /     %C| |_____   %C| | \\ \\    %C| |____| |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("    %C\\_/      %C|_______|  %C|_|  \\_\\   %C|________|\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
+	cprintf("\n%C", LIGHT_GRAY);
 	cprintf("Type 'help' for a list of commands.\n");
 
 
