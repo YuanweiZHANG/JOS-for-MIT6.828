@@ -135,7 +135,7 @@ monitor(struct Trapframe *tf)
 	cprintf("  %C\\ \\_/ /    %C|  _____|  %C|  _  __|  %C| |    | |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf("   %C\\   /     %C| |_____   %C| | \\ \\    %C| |____| |\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
 	cprintf("    %C\\_/      %C|_______|  %C|_|  \\_\\   %C|________|\n", LIGHT_MAGENTA, LIGHT_RED, YELLOW, GREEN);
-	cprintf("%C", LIGHT_GRAY);
+	cprintf("\n%C", LIGHT_GRAY);
 	cprintf("Type 'help' for a list of commands.\n");
 
 
