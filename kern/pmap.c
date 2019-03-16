@@ -387,6 +387,30 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
+	pde_t pde = pgdir[PDX(va)];
+	pte_t * pte_pr = NULL;
+	if (pde & PTE_P) {  // Page table exists
+		pte_pr = (pte_t *)KADDR(PTE_ADDR(pde)) + PTX(va);
+		return pte_pr;
+	}
+	else {
+		if (create == false) {
+	return NULL;
+}
+		else {
+			struct PageInfo *new_pt = page_alloc(ALLOC_ZERO);
+			if (new_pt == NULL) {  //allocation fails
+				return NULL;
+			}
+			else {
+				new_pt->pp_ref++;
+				pgdir[PDX(va)] = (pde_t)page2pa(new_pt) | PTE_P | PTE_W | PTE_U; // add page table page
+																				 // Cautious: PTE_U
+				pte_pr = (pte_t *)page2kva(new_pt) + PTX(va);
+				return pte_pr;
+			}
+		}
+	}
 	return NULL;
 }
 
@@ -405,6 +429,17 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+	pte_t *pte_pr = NULL;
+
+	for (size_t i = 0; i < size; i += PGSIZE, va += PGSIZE, pa += PGSIZE) {
+		pte_pr = pgdir_walk(pgdir, (void *)va, true); // Cautious: cannot use &va
+
+		if (pte_pr == NULL) {
+			panic("boot_map_region: map region virtual address: 0x%08x to physical address: 0x%08x failed:\ncannot find a free page table entry", va, pa);
+}
+		*pte_pr = pa | perm | PTE_P;
+	}
+
 }
 
 //
@@ -436,6 +471,20 @@ int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
+	pte_t *pte_pr = pgdir_walk(pgdir, va, true);
+
+	if (pte_pr == NULL) {
+		return -E_NO_MEM;
+	}
+
+	pp->pp_ref++;  // Cautious: must add reference count before remove, or pp exists in page_free_list
+	if (*pte_pr & PTE_P) {
+		page_remove(pgdir, va);
+	}
+
+	physaddr_t pa = page2pa(pp);
+	*pte_pr = pa | perm | PTE_P;
+
 	return 0;
 }
 
@@ -454,7 +503,15 @@ struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	// Fill this function in
+	pte_t *pte_pr = pgdir_walk(pgdir, va, false);
+	if (pte_pr == NULL) {
 	return NULL;
+}
+
+	if (pte_store != NULL) {
+		*pte_store = pte_pr;
+	}
+	return pa2page(PTE_ADDR(*pte_pr));;
 }
 
 //
@@ -476,6 +533,19 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
+	pte_t *pte_pr = NULL;  // Cautious: if I use pte_t **pte_store, **ptr_store is always 0
+	struct PageInfo *pp = page_lookup(pgdir, va, &pte_pr);
+
+	if (pp == NULL) {  // no physical page at va, silently does nothing
+		return;
+	}
+	
+	page_decref(pp);  // ref count decrement
+
+	tlb_invalidate(pgdir, va); // TLB must be invalidated
+	if (*pte_pr) {
+		*pte_pr = 0;
+	}
 }
 
 //
