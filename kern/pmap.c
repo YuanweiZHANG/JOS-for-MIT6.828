@@ -666,6 +666,10 @@ check_page_alloc(void)
 	fl = page_free_list;
 	page_free_list = 0;
 
+	// check reference count
+	// pp0->pp_ref = 1;
+	// page_free(pp0); // this code should intrig page_free to panic
+
 	// should be no free memory
 	assert(!page_alloc(0));
 
@@ -698,6 +702,9 @@ check_page_alloc(void)
 	page_free(pp0);
 	page_free(pp1);
 	page_free(pp2);
+
+	// check repeat free
+	// page_free(pp0); // This code should intrig page_free to panic
 
 	// number of free pages should be the same
 	for (pp = page_free_list; pp; pp = pp->pp_link)
