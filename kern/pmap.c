@@ -106,7 +106,7 @@ boot_alloc(uint32_t n)
 
 	if (n > 0) {
 		nextfree = ROUNDUP(nextfree + n, PGSIZE);
-}
+	}
 
 	if ((uint32_t)nextfree - KERNBASE > PGSIZE * npages) {
 		panic("boot_alloc: out of memory\n");
@@ -284,7 +284,7 @@ page_init(void)
 	for (; i < npages_basemem + npages_iomem; ++i) {
 		pages[i].pp_ref = 1;
 		pages[i].pp_link = NULL;
-}
+    }
 
 	// [EXTPHYSMEM, ...]
 	size_t npages_kern = ((uint32_t)boot_alloc(0) - KERNBASE) / PGSIZE; 
@@ -318,7 +318,7 @@ page_alloc(int alloc_flags)
 	if (page_free_list == NULL) {
 		// out of free memory
 		return NULL;
-}
+    }
 
 	struct PageInfo *alloc = page_free_list;
 	page_free_list = page_free_list->pp_link;
@@ -398,8 +398,8 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	}
 	else {
 		if (create == false) {
-	return NULL;
-}
+			return NULL;
+		}
 		else {
 			struct PageInfo *new_pt = page_alloc(ALLOC_ZERO);
 			if (new_pt == NULL) {  //allocation fails
@@ -439,7 +439,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 
 		if (pte_pr == NULL) {
 			panic("boot_map_region: map region virtual address: 0x%08x to physical address: 0x%08x failed:\ncannot find a free page table entry", va, pa);
-}
+		}
 		*pte_pr = pa | perm | PTE_P;
 	}
 
@@ -508,8 +508,8 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	// Fill this function in
 	pte_t *pte_pr = pgdir_walk(pgdir, va, false);
 	if (pte_pr == NULL) {
-	return NULL;
-}
+		return NULL;
+	}
 
 	if (pte_store != NULL) {
 		*pte_store = pte_pr;
