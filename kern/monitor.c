@@ -151,9 +151,7 @@ int mon_perm(int argc, char **argv, struct Trapframe *tf) {
 					cprintf("va 0x%08x has no physical mapping page\n\n", va);
 					continue;
 				}
-				cprintf("pte_pr before = 0x%08x\n", *pte_pr);
 				perm_set(pte_pr, perm);
-				cprintf("pte_pr after = 0x%08x\n", *pte_pr);
 			}
 			i--;
 		}
@@ -172,7 +170,6 @@ int mon_perm(int argc, char **argv, struct Trapframe *tf) {
 				}
 				pte_index = (uint32_t)strtol(argv[i], NULL, 16);
 				pte_t * pte_pr = (pte_t *)KADDR(PTE_ADDR(kern_pgdir[pdt_index])) + pte_index;
-				cprintf("pde=%x, pte=%x; pte_pr=0x%08x\n", pdt_index, pte_index, pte_pr);
 				perm_set(pte_pr, perm);
 			}
 			i--;
@@ -310,7 +307,9 @@ void memory_help() {
 }
 
 void memory_virtual(uintptr_t va, uint32_t byte) {
-	if (page_lookup(kern_pgdir, (void *)va, NULL) == NULL) {
+	pte_t *pte_pr;
+	struct PageInfo *pp = page_lookup(kern_pgdir, (void *)va, &pte_pr);
+	if (pp == NULL || pte_pr == NULL || (*pte_pr & PTE_P) == 0) {
 		cprintf("0x%08x:  Cannot access memory at address 0x%08x\n", va, va);
 		return;
 	}
@@ -321,9 +320,7 @@ void memory_virtual(uintptr_t va, uint32_t byte) {
 		if (i % 4 == 0) {
 			cprintf("0x%08x: ", va + i);
 		}
-		cprintf("DEBUG\n");
 		cprintf(" 0x%08x", *((uint32_t *)va + i));
-		cprintf("???\n");
 		if (i % 4 == 3) {
 			cprintf("\n");
 		}
