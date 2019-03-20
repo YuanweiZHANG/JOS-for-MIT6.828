@@ -302,8 +302,8 @@ void perm_set(pte_t *pte_pr, int perm) {
 void memory_help() {
 	cprintf("Memory displays virtual memory or physical memory content.\n");
 	cprintf("-h:       help\n");
-	cprintf("-v [va]:  display virtual memory va's content\n");
-	cprintf("-p [pa]:  display physical memory pa's content\n");
+	cprintf("-v [va] [b]:  display b byte virtual memory va's content\n");
+	cprintf("-p [pa] [b]:  display b byte physical memory pa's content\n");
 	cprintf("\n");
 }
 
