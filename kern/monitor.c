@@ -241,7 +241,7 @@ void showmappings_vaddr(uintptr_t start, uintptr_t end) {
 			uint32_t pte_index = PTX(va);
 
 			physaddr_t paddr = PTE_ADDR(*pte_pr) | PGOFF(va);
-			cprintf("0x%08x  PDE[%03x] PTE[%03x]   %x   ", va, pde_index, pte_index, pp - pages);
+			cprintf("0x%08x  PDE[%03x] PTE[%03x]   %3x   ", va, pde_index, pte_index, pp - pages);
 			showmappings_permission(pte_pr);
 			cprintf("         0x%08x", paddr);
 			cprintf("\n");
