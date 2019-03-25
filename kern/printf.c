@@ -6,7 +6,7 @@
 #include <inc/stdarg.h>
 #include <inc/tcolor.h>
 
-unsigned int textcolor = 0x0700;
+extern unsigned int textcolor;
 
 static void
 putch(int ch, int *cnt)
