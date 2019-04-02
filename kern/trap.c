@@ -172,6 +172,9 @@ trap_dispatch(struct Trapframe *tf)
 	case T_PGFLT:
 		page_fault_handler(tf);
 		return;
+	case T_SYSCALL:
+		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+		return;  // Cautious: return is necessary; and syscall' return is set to %eax
 	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
