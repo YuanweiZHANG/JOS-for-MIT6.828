@@ -18,6 +18,8 @@ int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
 int mon_showmappings(int argc, char **argv, struct Trapframe *tf);
 int mon_perm(int argc, char **argv, struct Trapframe *tf);
 int mon_memory(int argc, char **argv, struct Trapframe *tf);
+int mon_si(int argc, char **argv, struct Trapframe *tf);
+int mon_c(int argc, char **argv, struct Trapframe *tf);
 
 // Functions implementing showmappings.
 void showmappings_help();
