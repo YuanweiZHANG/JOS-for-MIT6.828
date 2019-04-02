@@ -165,6 +165,7 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 	switch(tf->tf_trapno) {
+	case T_DEBUG: // Challenge 2, handle when TF = 1
 	case T_BRKPT:
 		monitor(tf);
 		return;

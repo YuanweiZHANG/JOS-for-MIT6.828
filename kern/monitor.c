@@ -13,6 +13,7 @@
 #include <kern/kdebug.h>
 #include <kern/trap.h>
 #include <kern/pmap.h>
+#include <kern/env.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -31,7 +32,11 @@ static struct Command commands[] = {
 	{ "showmappings", "Display pa va mapping, type -h for help", mon_showmappings },
 	{ "perm", "Set mapping permisstion, type -h for help", mon_perm},
 	{ "memory", "Display va or pa memory content, type -h for help", mon_memory},
+	{ "si", "Execute one machine instruction; si x for excute x steps", mon_si},
+	{ "c", "Continue execution until the next breakpoint", mon_c},
 };
+
+int stepi = 0;
 
 /***** Implementations of basic kernel monitor commands *****/
 
@@ -222,6 +227,30 @@ int mon_memory(int argc, char **argv, struct Trapframe *tf) {
 	return 0;
 }
 
+int mon_si(int argc, char **argv, struct Trapframe *tf) {
+	if (tf == NULL) {
+		return 0;
+	}
+	tf->tf_eflags |= FL_TF;
+	if (stepi > 0) {
+		stepi--;
+	}
+	else if (argc == 2 && strtol(argv[1], NULL, 10) > 0) {
+		stepi = strtol(argv[1], NULL, 10) - 1;
+	}
+	env_run(curenv);
+	return 0;
+}
+
+int mon_c(int argc, char **argv, struct Trapframe *tf) {
+	if (tf == NULL) {
+		return 0;
+	}
+	tf->tf_eflags &= ~FL_TF;
+	env_run(curenv);
+	return 0;
+}
+
 void showmappings_help() {
 	cprintf("Showmappings displays virtual memory and physical memory mapping relationship.\n");
 	cprintf("-h:                 help\n");
@@ -393,6 +422,9 @@ monitor(struct Trapframe *tf)
 	cprintf("\n%C", LIGHT_GRAY);
 	cprintf("Type 'help' for a list of commands.\n");
 
+	if (stepi > 0) {
+		mon_si(0, 0, tf);
+	}
 	if (tf != NULL)
 		print_trapframe(tf);
 
