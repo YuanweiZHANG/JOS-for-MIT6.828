@@ -645,6 +645,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
+	size_t round_size = ROUNDUP(size, PGSIZE);
+	if (base + round_size >= MMIOLIM) {
+		panic("mmio_map_region: reservation overflow, size: 0x%x", size);
+	}
+	boot_map_region(kern_pgdir, base, round_size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	base += round_size;  // Cautious: base need to be added size after allocate
+	return (void *)(base - round_size);
 	panic("mmio_map_region not implemented");
 }
 
