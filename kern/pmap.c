@@ -321,8 +321,16 @@ page_init(void)
 	pages[0].pp_ref = 1;
 	pages[0].pp_link = NULL;
 
+	// MPENTRY_PADDR are used
+	size_t npages_mpentry = MPENTRY_PADDR / PGSIZE;
+	pages[npages_mpentry].pp_ref = 1;
+	pages[npages_mpentry].pp_link = NULL;
+
 	// [PGSIZE, npages_basemem * PGSIZE] is free
 	for (i = 1; i < npages_basemem; ++i) {
+		if (i == npages_mpentry) {
+			continue;
+		}
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
@@ -342,6 +350,7 @@ page_init(void)
 		pages[i].pp_ref = 1;
 		pages[i].pp_link = NULL;
 	}
+
 	for (; i < npages; ++i) {
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
