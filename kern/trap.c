@@ -212,6 +212,10 @@ trap_dispatch(struct Trapframe *tf)
 	case T_SYSCALL:
 		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
 		return;  // Cautious: return is necessary; and syscall' return is set to %eax
+	case IRQ_OFFSET + IRQ_TIMER:
+		lapic_eoi(); // Cautious: why this is so important
+		sched_yield();
+		return;
 	}
 
 	// Handle spurious interrupts
