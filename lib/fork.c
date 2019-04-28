@@ -26,7 +26,7 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 	if (!((err & FEC_WR) && (uvpt[PGNUM(addr)] & PTE_COW))) {
-		panic("pgfault: faulting access error, 0x%8x\n", addr);
+		panic("pgfault: faulting access error, 0x%08x\n", addr);
 	}
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
