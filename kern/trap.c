@@ -91,7 +91,11 @@ trap_init(void)
 		}
 		SETGATE(idt[i], 0, GD_KT, challenge_vectors[i], 0);
 	}
-	SETGATE(idt[T_SYSCALL], 1, GD_KT, challenge_vectors[T_SYSCALL], 3);
+	for (int i = IRQ_OFFSET; i < IRQ_OFFSET + 16; ++i) {
+		SETGATE(idt[i], 0, GD_KT, challenge_vectors[i], 0);
+	}
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, challenge_vectors[T_SYSCALL], 3); // Cautious: SYSCALL is not trap
+	SETGATE(idt[IRQ_OFFSET + IRQ_ERROR], 0, GD_KT, challenge_vectors[IRQ_OFFSET + IRQ_ERROR], 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
