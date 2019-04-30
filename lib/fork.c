@@ -163,10 +163,84 @@ fork(void)
 	panic("fork not implemented");
 }
 
+static int
+sduppage(envid_t envid, unsigned pn, bool isstack)
+{
+	int r;
+
+	// LAB 4: Your code here.
+	void *va = (void *)(pn * PGSIZE);
+	int perm = uvpt[PGNUM(va)] & 0xFFF & PTE_SYSCALL; // 0xFFF |= PTE_
+	// Cautious: PTE_SYSCALL is vital, or sys_page_map gets wrong perm
+
+	if (isstack && (perm & PTE_W)) {
+		perm |= PTE_COW;
+		perm &= (~PTE_W); // Cautious: in Lab4 duppage sets both PTEs so that the page is not writeable
+		if ((r = sys_page_map(0, va, envid, va, perm)) < 0) { // new mapping must be created COW
+			return r;
+		}
+		if ((r = sys_page_map(0, va, 0, va, perm)) < 0) { // our mapping must be marked COW as well
+			return r;
+		}
+	}
+	else {
+		if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
+			return r;
+		}
+	} 
+	// panic("duppage not implemented");
+	return 0;
+}
+
 // Challenge!
 int
 sfork(void)
 {
-	panic("sfork not implemented");
-	return -E_INVAL;
+	int r;
+	set_pgfault_handler(pgfault);
+	envid_t envid = sys_exofork();
+
+	if (envid < 0) {
+		panic("fork: sys_exofork: %e", envid);
+	}
+	else if (envid == 0) { // child
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+	uintptr_t addr = USTACKTOP - PGSIZE;
+	for (; addr >= UTEXT; addr -= PGSIZE) {
+		if ((uvpd[PDX(addr)] & PTE_P) && (uvpt[PGNUM(addr)] & PTE_P)) {
+			if ((r = sduppage(envid, PGNUM(addr), true)) < 0) {
+				panic("sfork: sduppage error: %e", r);
+			}
+		}
+		else {
+			break;
+		}
+	}
+	for(; addr >= UTEXT; addr -= PGSIZE) {
+		if ((uvpd[PDX(addr)] & PTE_P) && (uvpt[PGNUM(addr)] & PTE_P)) {
+			if ((r = sduppage(envid, PGNUM(addr), false)) < 0) {
+				panic("sfork: sduppage error: %e", r);
+			}
+		}
+	}
+
+	if ((r = sys_page_alloc(envid, (void *)(UXSTACKTOP - PGSIZE), PTE_P | PTE_W | PTE_U)) < 0) {
+		// allocate a fresh page in the child for the exception stack
+		return r;
+	}
+
+	extern void _pgfault_upcall(void);
+	if ((r = sys_env_set_pgfault_upcall(envid, _pgfault_upcall)) < 0) {
+		return r;
+	}
+
+	if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0) {
+		return r;
+	}
+	return envid;
+	// panic("sfork not implemented");
+	// return -E_INVAL;
 }
