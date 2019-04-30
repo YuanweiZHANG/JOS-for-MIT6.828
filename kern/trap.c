@@ -212,10 +212,6 @@ trap_dispatch(struct Trapframe *tf)
 	case T_SYSCALL:
 		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
 		return;  // Cautious: return is necessary; and syscall' return is set to %eax
-	case IRQ_OFFSET + IRQ_TIMER:
-		lapic_eoi(); // Cautious: why this is so important
-		sched_yield();
-		return;
 	}
 
 	// Handle spurious interrupts
@@ -230,6 +226,14 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+		// cprintf("Clock interrupt on irq 0\n");
+		// Cautious: if I add this cprintf, the result of primes is so variable
+		// and I don't know why
+		lapic_eoi();
+		sched_yield();
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
