@@ -5,8 +5,11 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
+// #define PRIORITY_SCHED_YIELD
+
 void sched_halt(void);
 
+#ifndef PRIORITY_SCHED_YIELD
 // Choose a user environment to run and run it.
 void
 sched_yield(void)
@@ -46,6 +49,38 @@ sched_yield(void)
 	// sched_halt never returns
 	sched_halt();
 }
+#else
+// This sched_yield regards env_runs as priority
+// the lowest env_runs and ENV_RUNNABLE environment has the most priority
+void sched_yield(void) {
+	int priority = __INT_MAX__;
+	int ready = -1;
+
+	int start = 0;
+	if (curenv) {
+		start = ENVX(curenv->env_id);
+	}
+
+	for (int i = 0; i < NENV; ++i) {
+		int index = (start + i) % NENV;
+		if (envs[index].env_status == ENV_RUNNABLE && envs[index].env_runs < priority) {
+			priority = envs[index].env_runs;
+			ready = index;
+		}
+		if (priority == 0) {
+			break;
+		}
+	}
+	if (ready != -1) { // have such priority environment
+		env_run(&envs[ready]);
+	}
+	if (curenv && curenv->env_status == ENV_RUNNING) {
+		env_run(curenv);
+	}
+
+	sched_halt();
+}
+#endif
 
 // Halt this CPU when there is nothing to do. Wait until the
 // timer interrupt wakes it up. This function never returns.
