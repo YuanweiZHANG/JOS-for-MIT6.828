@@ -74,7 +74,12 @@ duppage(envid_t envid, unsigned pn)
 	int perm = uvpt[PGNUM(va)] & 0xFFF & PTE_SYSCALL; // 0xFFF |= PTE_
 	// Cautious: PTE_SYSCALL is vital, or sys_page_map gets wrong perm
 
-	if (perm & (PTE_W | PTE_COW)) {
+	if (perm & PTE_SHARE) {
+		if ((r = sys_page_map(0, va, envid, va, perm)) < 0) {
+			return r;
+		}
+	}
+	else if (perm & (PTE_W | PTE_COW)) {
 		perm |= PTE_COW;
 		perm &= (~PTE_W); // Cautious: in Lab4 duppage sets both PTEs so that the page is not writeable
 		if ((r = sys_page_map(0, va, envid, va, perm)) < 0) { // new mapping must be created COW
