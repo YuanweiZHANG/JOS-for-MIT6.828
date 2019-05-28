@@ -3,6 +3,12 @@
 
 #include "fs.h"
 
+#ifdef LAB5_CHALLENGE
+int que_head = 0; // head of queue
+int que_tail = 0; // tail of queue, points to the next to the last
+int que_num = 0;
+#endif
+
 // --------------------------------------------------------------
 // Super block
 // --------------------------------------------------------------
@@ -215,6 +221,45 @@ file_get_block(struct File *f, uint32_t filebno, char **blk)
 		flush_block(diskaddr(r));
 	}
 	*blk = diskaddr(*ppdiskbno);
+	#ifdef LAB5_CHALLENGE
+	if (que_num == 0) {
+		// que is empty
+		que[que_tail] = *ppdiskbno;
+		que_tail = (que_tail + 1) % QUE_NUM;
+		que_num++;
+		cprintf("[eviction] empty que\n");
+	}
+	else {
+		if (que_head == que_tail) {
+			// que is full
+			void *addr = diskaddr(que[que_head]);
+			if (uvpt[PGNUM(addr)] & PTE_P) {
+				if (uvpt[PGNUM(addr)] & PTE_A) {
+					// not evict the head and meanwhile not push blk into queue
+					if (uvpt[PGNUM(addr)] & PTE_D) {
+						flush_block(addr);
+					}
+					sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
+				}
+				else {
+					cprintf("[eviction] evict succeed!\n");
+					// evict the head and push blk into queue
+					sys_page_unmap(0, addr);
+					que_head = (que_head + 1) % QUE_NUM;
+					que_num--;
+					que[que_tail] = *ppdiskbno;
+					que_tail = (que_tail + 1) % QUE_NUM;
+					que_num++;
+				}
+			}
+		}
+		else {
+			que[que_tail] = *ppdiskbno;
+			que_tail = (que_tail + 1) % QUE_NUM;
+			que_num++;
+		}
+	}
+	#endif
 	return 0;
 }
 
