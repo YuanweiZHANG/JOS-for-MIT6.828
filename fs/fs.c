@@ -141,7 +141,7 @@ fs_init(void)
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
-       // LAB 5: Your code here.
+    // LAB 5: Your code here.
     // panic("file_block_walk not implemented");
 	int r;
 	if (filebno < NDIRECT) { // slot in f_direct[]
@@ -198,7 +198,7 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
-       // LAB 5: Your code here.
+    // LAB 5: Your code here.
     // panic("file_get_block not implemented");
 	int r;
 	uint32_t *ppdiskbno;
