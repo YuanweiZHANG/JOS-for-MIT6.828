@@ -571,7 +571,7 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	// Fill this function in
 	pte_t *pte_pr = pgdir_walk(pgdir, va, false);
-	if (pte_pr == NULL) {
+	if (pte_pr == NULL || !(*pte_pr & PTE_P)) { // Cautious: No PTE or PTE is invalid!
 		return NULL;
 	}
 
