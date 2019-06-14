@@ -3,6 +3,12 @@
 
 #include "fs.h"
 
+#ifdef LAB5_CHALLENGE
+int que_head = 0; // head of queue
+int que_tail = 0; // tail of queue, points to the next to the last
+int que_num = 0;
+#endif
+
 // --------------------------------------------------------------
 // Super block
 // --------------------------------------------------------------
@@ -62,7 +68,14 @@ alloc_block(void)
 	// super->s_nblocks blocks in the disk altogether.
 
 	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+	for (int blockno = 0; blockno < super->s_nblocks; ++blockno) {
+		if (block_is_free(blockno)) { // block is free
+			bitmap[blockno/32] &= (~(1<<blockno%32));
+			flush_block(bitmap);
+			return blockno;
+		}
+	}
+	// panic("alloc_block not implemented");
 	return -E_NO_DISK;
 }
 
@@ -134,8 +147,50 @@ fs_init(void)
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
-       // LAB 5: Your code here.
-       panic("file_block_walk not implemented");
+    // LAB 5: Your code here.
+    // panic("file_block_walk not implemented");
+	int r;
+	if (filebno < NDIRECT) { // slot in f_direct[]
+		if (ppdiskbno) {
+			*ppdiskbno = f->f_direct + filebno;
+		}
+		return 0;
+	}
+	else if (filebno < NDIRECT + NINDIRECT) { // slot in f_indirect[]
+		if (f->f_indirect) { // slot in f_indirect
+			if (ppdiskbno) {
+				*ppdiskbno = (uint32_t *)diskaddr(f->f_indirect) + filebno - NDIRECT;
+				// Cautious: diskaddr
+				// Cautious: (uint32_t *) is necessary, 
+				// or *ppdiskbno will be dirty and then get the wrong diskaddr
+			}
+			return 0;
+		}
+		else { // f_indirect has not been allocated
+			if (alloc) { // allocate f_indirect
+				if ((r = alloc_block()) < 0) {
+					return -E_NO_DISK;
+				}
+				f->f_indirect = r; 
+				memset(diskaddr(r), 0, BLKSIZE);
+				flush_block(diskaddr(r));
+				if (ppdiskbno) {
+					*ppdiskbno = (uint32_t *)diskaddr(f->f_indirect) + filebno - NDIRECT;
+					// Cautious: *ppdiskbno is the addr of diskbnbo. 
+					// or will get wrong *ppdiskbno
+					// thus intrigue a page fault to read **ppdiskbno in file_write
+				}
+				return 0;
+			}
+			else {
+				return -E_NOT_FOUND;
+			}
+		}
+		
+	}
+	else { // filebno out of range
+		return -E_INVAL;
+	}
 }
 
 // Set *blk to the address in memory where the filebno'th
@@ -149,8 +204,63 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
-       // LAB 5: Your code here.
-       panic("file_get_block not implemented");
+    // LAB 5: Your code here.
+    // panic("file_get_block not implemented");
+	int r;
+	uint32_t *ppdiskbno;
+
+	if ((r = file_block_walk(f, filebno, &ppdiskbno, true)) < 0) {
+		return r;
+	}
+	if (*ppdiskbno == 0) { // this one I think is for direct entry(they can be not allocated)
+		if ((r = alloc_block()) < 0) {
+			return -E_NO_DISK;
+		}
+		*ppdiskbno = r;
+		memset(diskaddr(r), 0, BLKSIZE);
+		flush_block(diskaddr(r));
+	}
+	*blk = diskaddr(*ppdiskbno);
+	#ifdef LAB5_CHALLENGE
+	if (que_num == 0) {
+		// que is empty
+		que[que_tail] = *ppdiskbno;
+		que_tail = (que_tail + 1) % QUE_NUM;
+		que_num++;
+		cprintf("[eviction] empty que\n");
+	}
+	else {
+		if (que_head == que_tail) {
+			// que is full
+			void *addr = diskaddr(que[que_head]);
+			if (uvpt[PGNUM(addr)] & PTE_P) {
+				if (uvpt[PGNUM(addr)] & PTE_A) {
+					// not evict the head and meanwhile not push blk into queue
+					if (uvpt[PGNUM(addr)] & PTE_D) {
+						flush_block(addr);
+					}
+					sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
+				}
+				else {
+					cprintf("[eviction] evict succeed!\n");
+					// evict the head and push blk into queue
+					sys_page_unmap(0, addr);
+					que_head = (que_head + 1) % QUE_NUM;
+					que_num--;
+					que[que_tail] = *ppdiskbno;
+					que_tail = (que_tail + 1) % QUE_NUM;
+					que_num++;
+				}
+			}
+		}
+		else {
+			que[que_tail] = *ppdiskbno;
+			que_tail = (que_tail + 1) % QUE_NUM;
+			que_num++;
+		}
+	}
+	#endif
+	return 0;
 }
 
 // Try to find a file named "name" in dir.  If so, set *file to it.

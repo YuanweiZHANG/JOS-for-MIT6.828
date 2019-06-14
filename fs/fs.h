@@ -1,6 +1,8 @@
 #include <inc/fs.h>
 #include <inc/lib.h>
 
+// #define LAB5_CHALLENGE
+
 #define SECTSIZE	512			// bytes per disk sector
 #define BLKSECTS	(BLKSIZE / SECTSIZE)	// sectors per block
 
@@ -13,6 +15,14 @@
 
 struct Super *super;		// superblock
 uint32_t *bitmap;		// bitmap blocks mapped in memory
+
+#ifdef LAB5_CHALLENGE
+#define QUE_NUM 100
+uint32_t que[QUE_NUM];
+extern int que_head; // head of queue
+extern int que_tail; // tail of queue, points to the next to the last
+extern int que_num;
+#endif
 
 /* ide.c */
 bool	ide_probe_disk1(void);
