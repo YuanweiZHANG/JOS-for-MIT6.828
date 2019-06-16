@@ -232,6 +232,7 @@ trap_dispatch(struct Trapframe *tf)
 		// Cautious: if I add this cprintf, the result of primes is so variable
 		// and I don't know why
 		lapic_eoi();
+		time_tick();
 		sched_yield();
 		return;
 	}
